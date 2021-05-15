@@ -30,12 +30,12 @@ class Line:
         
     def printChequers(self):
         if(len(self.chequers) == 0):
-            return ""
+            return "__"
         else:
             return str(len(self.chequers)) + self.player
     
     def addBrokenChequer(self, c, all_chequers):
-        broken_x_axis = ['E' if c.player == 'X' else 'H']
+        broken_x_axis = 'E' if(c.player == 'X') else 'H'
         l = list(filter(lambda a: a.location['x']==broken_x_axis and a.location['y']=='3'))[0]
         l.addChequer(c)
 
