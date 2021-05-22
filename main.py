@@ -107,12 +107,15 @@ def findChequer(x, y, player = ""):
     return None if len(chequerList) == 0 else chequerList[0]
 
 def rollDice(player):
-    print("The dice are rolled for {}...".format(player))
+    print("{} player rolled...".format(player))
     #time.sleep(1)
     r1 = random.randint(1,6)
     r2 = random.randint(1,6)
     findLine('F','3').chequers = list(range(r1))
     findLine('G','3').chequers = list(range(r2))
+    
+    print("The dice are {} and {}".format(r1,r2))
+    #time.sleep(1)
     
     if r1 == r2: return [r1, r1, r1, r1]
     else: return [r1, r2]
@@ -153,13 +156,77 @@ def main():
     
     while True:
         dice_arr = rollDice(player)
+        home_y_axis = '1' if(player == 'X') else '5'
             
+        # Collect Chequer
+        home_chequers = list(filter(lambda a: a.line.location['x'] in player_home and a.line.location['y']==home_y_axis and a.player==player, all_chequers))
+        if len(home_chequers) == 15:
+            while True:
+                printMap(lines_2D, player)
+            
+                f = input("From (e.g: E1): ")
+                c = findChequer(f[0], f[1], player)
+                if(f == 'exit'): return
+                elif(c == None):
+                    print("{} chequer is not found for {} player!".format(f, player))
+                    time.sleep(2)
+                    continue
+                
+                while True:
+                    status = input("Step or collect? (Enter: 'step' or 'collect') \n-> ")
+                    if status not in ['step','collect']:
+                        print("You must enter step or collect!")
+                        continue
+            
+                if status == 'step':
+                    step = int(input("How many steps? {}: ".format(dice_arr)))
+                    if step not in dice_arr:
+                        print("Invalid step! Only {}".format(dice_arr))
+                        time.sleep(1)
+                        continue
+                    
+                    t = findStepLine(f, player, step)
+                    if t == False:
+                        print("Invalid step for {} dice!".format(step))
+                        time.sleep(1)
+                    
+                    l = findLine(t[0], t[1])
+                    result = l.addChequer(c, all_lines)
+                    if(result == False):
+                        print("Invalid move!")
+                        time.sleep(2)
+                        continue
+                
+                if status == 'collect': c.removeLine()
+                    
+                dice_arr.remove(step)  
+                if len(dice_arr) == 0: break
+                
+            
+        
+        # Broken Chequer
         broken_x_axis = 'E' if(player == 'X') else 'H'
         broken_line = findLine(broken_x_axis, '3')
         if len(broken_line.chequers) != 0:
             printMap(lines_2D, player)
+            
+            dice_arr_copy = dice_arr.copy()
+            for dice in dice_arr_copy:
+                home_l = findLine(player_home[dice-1], home_y_axis)
+                if (home_l.player == player) or (len(home_l.chequers) <= 1):
+                    home_l.addChequer(broken_line.chequers[0], all_lines)
+                    dice_arr.remove(dice)
+                
+                if len(broken_line.chequers) == 0: break
         
-        
+            if (len(dice_arr) == 0) or (len(broken_line.chequers) != 0): 
+                player = "Y" if player == "X" else "X"
+                #time.sleep(1)
+                os.system("cls")
+                continue
+            
+            
+        # Game Stream
         while True:
             printMap(lines_2D, player)
         
@@ -202,6 +269,7 @@ if __name__ == "__main__":
     x_locations = ['A','B','C','D','E','F','G','H','I','J','K','L']
     y_locations = ['1','2','3','4','5']
     route = ['L1','K1','J1','I1','H1','G1','F1','E1','D1','C1','B1','A1','A5','B5','C5','D5','E5','F5','G5','H5','I5','J5','K5','L5']
+    player_home = ['L','K','J','I','H','G']
     
     all_chequers = []
     all_lines = []
