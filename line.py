@@ -6,8 +6,8 @@ class Line:
     
     def addChequer(self, c, all_lines = []):
         if(self.player == "" or self.player == c.player): # Normal taş ekleme
-            if(self != c.line):
-                c.line.removeChequer(c)
+            
+            if(self != c.line): c.line.removeChequer(c)
             
             c.line = self
             self.chequers.append(c)
@@ -16,11 +16,14 @@ class Line:
         
         elif(self.player != c.player and len(self.chequers) == 1): # Taş kırma işlemi
             broken_c = self.chequers[0]
-            c.line = self
-            
-            self.removeChequer(broken_c)
-            self.player = c.player
+            broken_c.line.removeChequer(broken_c)
             self.addBrokenChequer(broken_c, all_lines)
+            
+            if(self != c.line): c.line.removeChequer(c)
+            
+            c.line = self
+            self.chequers.append(c)
+            self.player = c.player
             return True
         
         else:
@@ -38,16 +41,11 @@ class Line:
             return str(len(self.chequers)) + self.player
     
     def addBrokenChequer(self, c, all_lines):
-        broken_x_axis = 'E' if(c.player == 'X') else 'H'
-        l = list(filter(lambda a: a.location['x']==broken_x_axis and a.location['y']=='3', all_lines))[0]
+        x_axis = 'E' if(c.player == 'X') else 'H'
+        l = list(filter(lambda a: a.location['x']==x_axis and a.location['y']=='3', all_lines))[0]
+        
+        c.line = l
         l.addChequer(c)
-
-
-
-
-
-
-
 
 
 
