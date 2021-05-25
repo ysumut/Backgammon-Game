@@ -35,7 +35,7 @@ class Line:
             self.player = ""
         
     def printChequers(self):
-        if(len(self.chequers) == 0):
+        if len(self.chequers) == 0 or ((self.location['x']=='E' or self.location['x']=='H') and self.location['y']=='4'):
             return "__"
         else:
             return str(len(self.chequers)) + self.player

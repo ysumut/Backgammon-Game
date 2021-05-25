@@ -36,7 +36,7 @@ def createEntities():
         for x in x_locations:
             l = Line({'x':x, 'y':y})
             
-            if(x == 'A' and y == '1'):
+            if(x == 'I' and y == '5'):
                 for i in range(0,5): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
@@ -51,27 +51,32 @@ def createEntities():
                     c = Chequer(l, 'X')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'E' and y == '5'):
+            elif(x == 'H' and y == '5'):
                 for i in range(0,3): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
                     l.addChequer(c)
             elif(x == 'G' and y == '1'):
-                for i in range(0,5): 
+                for i in range(0,3): 
                     c = Chequer(l, 'X')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'G' and y == '5'):
+            elif(x == 'J' and y == '5'):
                 for i in range(0,5): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'L' and y == '1'):
+            elif(x == 'K' and y == '5'):
                 for i in range(0,2): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'L' and y == '5'):
+            elif(x == 'D' and y == '5'):
+                for i in range(0,2): 
+                    c = Chequer(l, 'X')
+                    all_chequers.append(c)
+                    l.addChequer(c)
+            elif(x == 'E' and y == '3'):
                 for i in range(0,2): 
                     c = Chequer(l, 'X')
                     all_chequers.append(c)
@@ -157,10 +162,35 @@ def main():
     while True:
         dice_arr = rollDice(player)
         home_y_axis = '1' if(player == 'X') else '5'
+        opponent_y_axis = '5' if(player == 'X') else '1'
+        collect_x_axis = 'E' if(player == 'X') else 'H'
             
+        # Broken Chequer
+        broken_x_axis = 'E' if(player == 'X') else 'H'
+        broken_line = findLine(broken_x_axis, '3')
+        if len(broken_line.chequers) != 0:
+            printMap(lines_2D, player)
+            
+            dice_arr_copy = dice_arr.copy()
+            for dice in dice_arr_copy:
+                home_l = findLine(player_home[dice-1], opponent_y_axis)
+                if (home_l.player == player) or (len(home_l.chequers) <= 1):
+                    home_l.addChequer(broken_line.chequers[0], all_lines)
+                    dice_arr.remove(dice)
+                
+                if len(broken_line.chequers) == 0: break
+        
+            if (len(dice_arr) == 0) or (len(broken_line.chequers) != 0): 
+                player = "Y" if player == "X" else "X"
+                #time.sleep(1)
+                os.system("cls")
+                continue
+        
+        
         # Collect Chequer
+        collect_count = len(findLine(collect_x_axis, '4').chequers)
         home_chequers = list(filter(lambda a: a.line.location['x'] in player_home and a.line.location['y']==home_y_axis and a.player==player, all_chequers))
-        if len(home_chequers) == 15:
+        if len(home_chequers) + collect_count == 15:
             while True:
                 printMap(lines_2D, player)
             
@@ -174,56 +204,48 @@ def main():
                 
                 while True:
                     status = input("Step or collect? (Enter: 'step' or 'collect') \n-> ")
-                    if status not in ['step','collect']:
-                        print("You must enter step or collect!")
-                        continue
+                    if status in ['step','collect']: break
+                    else: print("You must enter step or collect!")
             
                 if status == 'step':
-                    step = int(input("How many steps? {}: ".format(dice_arr)))
-                    if step not in dice_arr:
-                        print("Invalid step! Only {}".format(dice_arr))
-                        time.sleep(1)
-                        continue
+                    while True:
+                        step = int(input("How many steps? {}: ".format(dice_arr)))
+                        if step in dice_arr: break
+                        else:
+                            print("Invalid step! Only {}".format(dice_arr))
+                            continue
                     
                     t = findStepLine(f, player, step)
                     if t == False:
                         print("Invalid step for {} dice!".format(step))
                         time.sleep(1)
+                        continue
                     
                     l = findLine(t[0], t[1])
                     result = l.addChequer(c, all_lines)
                     if(result == False):
                         print("Invalid move!")
-                        time.sleep(2)
+                        time.sleep(1)
                         continue
-                
-                if status == 'collect': c.removeLine()
                     
-                dice_arr.remove(step)  
+                    dice_arr.remove(step)  
+                
+                if status == 'collect':
+                    home_number = player_home.index(f[0]) + 1
+                    if home_number in dice_arr:
+                        c.collect(all_lines)
+                        dice_arr.remove(home_number)
+                    else:
+                        print("Invalid collect!")
+                        time.sleep(1)
+                        continue
+                    
                 if len(dice_arr) == 0: break
                 
-            
-        
-        # Broken Chequer
-        broken_x_axis = 'E' if(player == 'X') else 'H'
-        broken_line = findLine(broken_x_axis, '3')
-        if len(broken_line.chequers) != 0:
-            printMap(lines_2D, player)
-            
-            dice_arr_copy = dice_arr.copy()
-            for dice in dice_arr_copy:
-                home_l = findLine(player_home[dice-1], home_y_axis)
-                if (home_l.player == player) or (len(home_l.chequers) <= 1):
-                    home_l.addChequer(broken_line.chequers[0], all_lines)
-                    dice_arr.remove(dice)
-                
-                if len(broken_line.chequers) == 0: break
-        
-            if (len(dice_arr) == 0) or (len(broken_line.chequers) != 0): 
-                player = "Y" if player == "X" else "X"
-                #time.sleep(1)
-                os.system("cls")
-                continue
+            player = "Y" if player == "X" else "X"
+            #time.sleep(1)
+            os.system("cls")
+            continue
             
             
         # Game Stream
@@ -238,22 +260,24 @@ def main():
                 time.sleep(2)
                 continue
         
-            step = int(input("How many steps? {}: ".format(dice_arr)))
-            if step not in dice_arr:
-                print("Invalid step! Only {}".format(dice_arr))
-                time.sleep(1)
-                continue
+            while True:
+                step = int(input("How many steps? {}: ".format(dice_arr)))
+                if step in dice_arr: break
+                else:
+                    print("Invalid step! Only {}".format(dice_arr))
+                    continue
             
             t = findStepLine(f, player, step)
             if t == False:
                 print("Invalid step for {} dice!".format(step))
                 time.sleep(1)
+                continue
             
             l = findLine(t[0], t[1])
             result = l.addChequer(c, all_lines)
             if(result == False):
                 print("Invalid move!")
-                time.sleep(2)
+                time.sleep(1)
                 continue
         
             dice_arr.remove(step)  
