@@ -4,6 +4,11 @@ import time
 from line import Line
 from chequer import Chequer
 
+def isInt(x):
+    try:
+        return int(x)
+    except ValueError:
+        return x
 
 def printMap(lines_2D, player):
     MAP = " _A__ _B__ _C__ _D__ _E__ _F__  _G__ _H__ _I__ _J__ _K__ _L__ \n"
@@ -124,6 +129,18 @@ def rollDice(player):
     
     if r1 == r2: return [r1, r1, r1, r1]
     else: return [r1, r2]
+    
+def brokenControl(player, opponent_y_axis, dice_arr):
+    line_count = len(list(filter(lambda l: (l.player==player or len(l.chequers)<=1) and (l.location['x'] in player_home) and (l.location['y']==opponent_y_axis) and (player_home.index(l.location['x'])+1 in dice_arr), all_lines)))
+    return True if (line_count > 0) else False
+
+# TODO: collectControl yap
+# TODO: moveControl yap
+
+def changePlayer(player):
+    #time.sleep(1)
+    os.system("cls")
+    return "Y" if player == "X" else "X"
 
 def main():
     player = ""
@@ -169,21 +186,34 @@ def main():
         broken_x_axis = 'E' if(player == 'X') else 'H'
         broken_line = findLine(broken_x_axis, '3')
         if len(broken_line.chequers) != 0:
-            printMap(lines_2D, player)
+            print(player, "player have broken chequers!")
             
-            dice_arr_copy = dice_arr.copy()
-            for dice in dice_arr_copy:
-                home_l = findLine(player_home[dice-1], opponent_y_axis)
+            while True:
+                printMap(lines_2D, player)
+                
+                if brokenControl(player, opponent_y_axis, dice_arr) == False:
+                    print(player, "player passed! Because there are no moves.")
+                    break
+                
+                while True:
+                    number = isInt(input("Which number do you want to go to? {}: ".format(dice_arr)))
+                    if number == 'exit': return
+                    elif number in dice_arr: break
+                    else:
+                        print("Invalid number! Only {}".format(dice_arr))
+                        continue
+                
+                home_l = findLine(player_home[number-1], opponent_y_axis)
                 if (home_l.player == player) or (len(home_l.chequers) <= 1):
                     home_l.addChequer(broken_line.chequers[0], all_lines)
-                    dice_arr.remove(dice)
+                    dice_arr.remove(number)
+                else:
+                    print("Invalid move!")
                 
                 if len(broken_line.chequers) == 0: break
-        
+            
             if (len(dice_arr) == 0) or (len(broken_line.chequers) != 0): 
-                player = "Y" if player == "X" else "X"
-                #time.sleep(1)
-                os.system("cls")
+                player = changePlayer(player)
                 continue
         
         
@@ -209,8 +239,9 @@ def main():
             
                 if status == 'step':
                     while True:
-                        step = int(input("How many steps? {}: ".format(dice_arr)))
-                        if step in dice_arr: break
+                        step = isInt(input("How many steps? {}: ".format(dice_arr)))
+                        if step == 'exit': return
+                        elif step in dice_arr: break
                         else:
                             print("Invalid step! Only {}".format(dice_arr))
                             continue
@@ -242,9 +273,7 @@ def main():
                     
                 if len(dice_arr) == 0: break
                 
-            player = "Y" if player == "X" else "X"
-            #time.sleep(1)
-            os.system("cls")
+            player = changePlayer(player)
             continue
             
             
@@ -261,8 +290,9 @@ def main():
                 continue
         
             while True:
-                step = int(input("How many steps? {}: ".format(dice_arr)))
-                if step in dice_arr: break
+                step = isInt(input("How many steps? {}: ".format(dice_arr)))
+                if step == 'exit': return
+                elif step in dice_arr: break
                 else:
                     print("Invalid step! Only {}".format(dice_arr))
                     continue
@@ -284,9 +314,7 @@ def main():
             if len(dice_arr) == 0: break
         
         
-        player = "Y" if player == "X" else "X"
-        #time.sleep(1)
-        os.system("cls")
+        player = changePlayer(player)
     
     
 if __name__ == "__main__":
