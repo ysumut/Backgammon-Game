@@ -134,8 +134,29 @@ def brokenControl(player, opponent_y_axis, dice_arr):
     line_count = len(list(filter(lambda l: (l.player==player or len(l.chequers)<=1) and (l.location['x'] in player_home) and (l.location['y']==opponent_y_axis) and (player_home.index(l.location['x'])+1 in dice_arr), all_lines)))
     return True if (line_count > 0) else False
 
-# TODO: collectControl yap
-# TODO: moveControl yap
+def collectControl(player, home_y_axis, dice_arr):
+    lines = list(filter(lambda l: (l.player==player and len(l.chequers)>=1) and (l.location['x'] in player_home) and (l.location['y']==home_y_axis), all_lines))
+    for l in lines:
+        home_number = player_home.index(l.location['x']) + 1
+        if len(list(filter(lambda d: d >= home_number, dice_arr))) > 0:
+            return True
+    return False
+
+def moveControl(player, dice_arr):
+    chequers = list(filter(lambda c: (c.player==player) and (c.is_collect==False) and (c.line.location['y'] in ['1','5']), all_chequers))
+    
+    for c in chequers:
+        c_location = c.line.location['x'] + c.line.location['y']
+        for dice in dice_arr:
+            str_line = findStepLine(c_location, player, dice)
+            if str_line != False:
+                line = findLine(str_line[0], str_line[1])
+                if (line.player == "" or line.player == c.player) or (line.player != c.player and len(line.chequers) == 1):
+                    return True
+    return False
+
+def finishControl(player):
+    return len(list(filter(lambda c: c.player==player and c.is_collect==True, all_chequers))) == 15
 
 def changePlayer(player):
     #time.sleep(1)
@@ -197,7 +218,7 @@ def main():
                 
                 while True:
                     number = isInt(input("Which number do you want to go to? {}: ".format(dice_arr)))
-                    if number == 'exit': return
+                    if number == 'save': return 'save'
                     elif number in dice_arr: break
                     else:
                         print("Invalid number! Only {}".format(dice_arr))
@@ -223,10 +244,19 @@ def main():
         if len(home_chequers) + collect_count == 15:
             while True:
                 printMap(lines_2D, player)
-            
+                
+                if moveControl(player, dice_arr) == False and collectControl(player, home_y_axis, dice_arr) == False:
+                    print(player, "player passed! Because there are no moves.")
+                    break
+                
                 f = input("From (e.g: E1): ")
+                if len(f) < 2:
+                    print("{} line is incorrect! (e.g: A5)".format(f))
+                    time.sleep(2)
+                    continue
+            
                 c = findChequer(f[0], f[1], player)
-                if(f == 'exit'): return
+                if(f == 'save'): return 'save'
                 elif(c == None):
                     print("{} chequer is not found for {} player!".format(f, player))
                     time.sleep(2)
@@ -240,7 +270,7 @@ def main():
                 if status == 'step':
                     while True:
                         step = isInt(input("How many steps? {}: ".format(dice_arr)))
-                        if step == 'exit': return
+                        if step == 'save': return 'save'
                         elif step in dice_arr: break
                         else:
                             print("Invalid step! Only {}".format(dice_arr))
@@ -263,13 +293,27 @@ def main():
                 
                 if status == 'collect':
                     home_number = player_home.index(f[0]) + 1
-                    if home_number in dice_arr:
+                    is_dice_bigger = len(list(filter(lambda d: d >= home_number, dice_arr))) > 0
+                    has_bigger_chequer = False
+                    
+                    for each in player_home[home_number : ]:
+                        home_c = findChequer(each, home_y_axis, player)
+                        if home_c != None and home_c.is_collect == False:
+                            has_bigger_chequer = True
+                            break
+                    
+                    if (home_number in dice_arr):
                         c.collect(all_lines)
                         dice_arr.remove(home_number)
+                    elif (is_dice_bigger == True and has_bigger_chequer == False):
+                        c.collect(all_lines)
+                        dice_arr.remove(max(dice_arr))
                     else:
                         print("Invalid collect!")
                         time.sleep(1)
                         continue
+                    
+                    if finishControl(player) == True: return player
                     
                 if len(dice_arr) == 0: break
                 
@@ -280,10 +324,19 @@ def main():
         # Game Stream
         while True:
             printMap(lines_2D, player)
+            
+            if moveControl(player, dice_arr) == False:
+                print(player, "player passed! Because there are no moves.")
+                break
         
             f = input("From (e.g: E1): ")
+            if len(f) < 2:
+                print("{} line is incorrect! (e.g: A5)".format(f))
+                time.sleep(2)
+                continue
+                
             c = findChequer(f[0], f[1], player)
-            if(f == 'exit'): return
+            if(f == 'save'): return 'save'
             elif(c == None):
                 print("{} chequer is not found for {} player!".format(f, player))
                 time.sleep(2)
@@ -291,7 +344,7 @@ def main():
         
             while True:
                 step = isInt(input("How many steps? {}: ".format(dice_arr)))
-                if step == 'exit': return
+                if step == 'save': return 'save'
                 elif step in dice_arr: break
                 else:
                     print("Invalid step! Only {}".format(dice_arr))
@@ -310,7 +363,7 @@ def main():
                 time.sleep(1)
                 continue
         
-            dice_arr.remove(step)  
+            dice_arr.remove(step)
             if len(dice_arr) == 0: break
         
         
@@ -328,9 +381,12 @@ if __name__ == "__main__":
     lines_2D = []
     
     createEntities()
+    result = main()
     
-    main()
-    
+    if result in ['X','Y']:
+        input("\t\t\t {} PLAYER WON!".format(result))
+    elif result == 'save':
+        pass
     
                 
         
