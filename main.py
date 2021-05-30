@@ -32,6 +32,9 @@ def printMap(lines_2D, player):
     os.system("cls")
     print(player, "turn:", "\n")
     print(MAP)
+    
+    with open('Table.dat', 'w') as file:
+        file.write(MAP)
 
 
 def createEntities():
@@ -41,7 +44,7 @@ def createEntities():
         for x in x_locations:
             l = Line({'x':x, 'y':y})
             
-            if(x == 'I' and y == '5'):
+            if(x == 'A' and y == '1'):
                 for i in range(0,5): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
@@ -56,32 +59,27 @@ def createEntities():
                     c = Chequer(l, 'X')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'H' and y == '5'):
+            elif(x == 'E' and y == '5'):
                 for i in range(0,3): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
                     l.addChequer(c)
             elif(x == 'G' and y == '1'):
-                for i in range(0,3): 
+                for i in range(0,5): 
                     c = Chequer(l, 'X')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'J' and y == '5'):
+            elif(x == 'G' and y == '5'):
                 for i in range(0,5): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'K' and y == '5'):
+            elif(x == 'L' and y == '1'):
                 for i in range(0,2): 
                     c = Chequer(l, 'Y')
                     all_chequers.append(c)
                     l.addChequer(c)
-            elif(x == 'D' and y == '5'):
-                for i in range(0,2): 
-                    c = Chequer(l, 'X')
-                    all_chequers.append(c)
-                    l.addChequer(c)
-            elif(x == 'E' and y == '3'):
+            elif(x == 'L' and y == '5'):
                 for i in range(0,2): 
                     c = Chequer(l, 'X')
                     all_chequers.append(c)
@@ -92,6 +90,50 @@ def createEntities():
         
         lines_2D.append(lines_X_axis)
 
+    
+def getSavedEntities():
+    chequers = []
+    
+    with open('Save.dat', 'r') as file:
+        for each in file.readlines():
+            data = each.split(' / ')
+            if data[0] == 'turn':
+                player = data[1]
+                allDices = data[2].split(',')
+                currentDices = data[3].split(',')
+            if data[0] == 'chequer':
+                is_collect = True if (data[3]=='True') else False
+                chequers.append([eval(data[1]), data[2], is_collect])
+        
+    for y in y_locations:
+        lines_X_axis = []
+        
+        for x in x_locations:
+            l = Line({'x':x, 'y':y})
+            all_lines.append(l)
+            lines_X_axis.append(l)
+        
+        lines_2D.append(lines_X_axis)
+    
+    for each in chequers:
+        line = list(filter(lambda l: each[0]['x']==l.location['x'] and each[0]['y']==l.location['y'], all_lines))[0]
+        
+        c = Chequer(line, each[1])
+        c.is_collect = each[2]
+        all_chequers.append(c)
+        line.addChequer(c)
+    
+    all_dices = []
+    dice_arr = []
+    for d in allDices: 
+        if d != "": all_dices.append(int(d))
+    for d in currentDices: 
+        if d != "": dice_arr.append(int(d))
+    
+    findLine('F','3').chequers = list(range(all_dices[0]))
+    findLine('G','3').chequers = list(range(all_dices[1]))
+    return (player, all_dices, dice_arr)
+    
 
 def findStepLine(from_location, player, step):
     i = route.index(from_location)
@@ -118,18 +160,55 @@ def findChequer(x, y, player = ""):
 
 def rollDice(player):
     print("{} player rolled...".format(player))
-    #time.sleep(1)
+    time.sleep(1)
     r1 = random.randint(1,6)
     r2 = random.randint(1,6)
     findLine('F','3').chequers = list(range(r1))
     findLine('G','3').chequers = list(range(r2))
     
     print("The dice are {} and {}".format(r1,r2))
-    #time.sleep(1)
+    time.sleep(1)
+    
+    with open('Log.dat', 'a') as file:
+        file.write("{} {} {}\n".format(player, r1, r2))
     
     if r1 == r2: return [r1, r1, r1, r1]
     else: return [r1, r2]
+
+def rollFirstDices():
+    while True:
+        os.system("cls")
+        
+        print("The dice are rolled for X...")
+        time.sleep(1)
+        r_X = random.randint(1,6)
+        print("X dice ->", r_X)
+        findLine('F','3').chequers = list(range(r_X))
+        
+        time.sleep(1)
+        
+        print("The dice are rolled for Y...")
+        time.sleep(1)
+        r_Y = random.randint(1,6)
+        print("Y dice ->", r_Y)
+        findLine('G','3').chequers = list(range(r_Y))
+        
+        if(r_X == r_Y):
+            print("Dice equal! Dice are thrown again.")
+            time.sleep(1)
+            continue
+        else:
+            with open('Log.dat', 'w') as file:
+                file.write("{}\n{}\n".format(r_X, r_Y))
+        
+        if(r_X > r_Y): player = "X"
+        else: player = "Y"
     
+        print(player, "player starts!")
+        time.sleep(1)
+        return player
+    
+
 def brokenControl(player, opponent_y_axis, dice_arr):
     line_count = len(list(filter(lambda l: (l.player==player or len(l.chequers)<=1) and (l.location['x'] in player_home) and (l.location['y']==opponent_y_axis) and (player_home.index(l.location['x'])+1 in dice_arr), all_lines)))
     return True if (line_count > 0) else False
@@ -159,46 +238,55 @@ def finishControl(player):
     return len(list(filter(lambda c: c.player==player and c.is_collect==True, all_chequers))) == 15
 
 def changePlayer(player):
-    #time.sleep(1)
+    time.sleep(1)
     os.system("cls")
     return "Y" if player == "X" else "X"
 
+def saveGame(player, allDices, currentDices):
+    print("The game saved.")
+    
+    all_dices = ""
+    current_dices = ""
+    for d in allDices: all_dices += str(d) + ','
+    for d in currentDices: current_dices += str(d) + ','
+    
+    with open('Save.dat', 'w') as file:
+        file.write("turn / {} / {} / {} / \n".format(player, all_dices, current_dices))
+        i = 1
+        for c in all_chequers:
+            if (i == len(all_chequers)): text = "chequer / {} / {} / {} / "
+            else: text = "chequer / {} / {} / {} / \n"
+        
+            file.write(text.format(c.line.location, c.player, c.is_collect))
+            i += 1
+
 def main():
     player = ""
+    roll_control = True
+    print("\t\t\tBACKGOMMON GAME \n")
     
-    print("\t\t\tBACKGOMMON GAME")
-    #input("1- New game \n2- Continue game \n--> ")
-        
     while True:
-        os.system("cls")
-        
-        print("The dice are rolled for X...")
-        #time.sleep(1)
-        r_X = random.randint(1,6)
-        print("X dice ->", r_X)
-        findLine('F','3').chequers = list(range(r_X))
-        
-        #time.sleep(1)
-        
-        print("The dice are rolled for Y...")
-        #time.sleep(1)
-        r_Y = random.randint(1,6)
-        print("Y dice ->", r_Y)
-        findLine('G','3').chequers = list(range(r_Y))
-        
-        if(r_X == r_Y):
-            print("Dice equal! Dice are thrown again.")
-            #time.sleep(1)
+        choose = isInt(input("1- New game \n2- Continue saved game \n--> "))
+        if choose in [1,2]: break
+        else:
+            print("Invalid choose! You should type 1 or 2")
             continue
-        elif(r_X > r_Y): player = "X"
-        else: player = "Y"
     
-        print(player, "player starts!")
-        #time.sleep(1)
-        break
+    if choose == 1: 
+        print("NOTE: Type 'save' into any entry to save the game.")
+        time.sleep(2)
+        createEntities()
+        player = rollFirstDices()
+    else: 
+        roll_control = False
+        player, all_dices, dice_arr = getSavedEntities()
     
     while True:
-        dice_arr = rollDice(player)
+        if roll_control == True:
+            all_dices = rollDice(player)
+            dice_arr = all_dices.copy()
+        
+        roll_control = True
         home_y_axis = '1' if(player == 'X') else '5'
         opponent_y_axis = '5' if(player == 'X') else '1'
         collect_x_axis = 'E' if(player == 'X') else 'H'
@@ -218,7 +306,7 @@ def main():
                 
                 while True:
                     number = isInt(input("Which number do you want to go to? {}: ".format(dice_arr)))
-                    if number == 'save': return 'save'
+                    if number == 'save': return ['save', player, all_dices, dice_arr]
                     elif number in dice_arr: break
                     else:
                         print("Invalid number! Only {}".format(dice_arr))
@@ -256,7 +344,7 @@ def main():
                     continue
             
                 c = findChequer(f[0], f[1], player)
-                if(f == 'save'): return 'save'
+                if(f == 'save'): return ['save', player, all_dices, dice_arr]
                 elif(c == None):
                     print("{} chequer is not found for {} player!".format(f, player))
                     time.sleep(2)
@@ -270,7 +358,7 @@ def main():
                 if status == 'step':
                     while True:
                         step = isInt(input("How many steps? {}: ".format(dice_arr)))
-                        if step == 'save': return 'save'
+                        if step == 'save': return ['save', player, all_dices, dice_arr]
                         elif step in dice_arr: break
                         else:
                             print("Invalid step! Only {}".format(dice_arr))
@@ -313,7 +401,7 @@ def main():
                         time.sleep(1)
                         continue
                     
-                    if finishControl(player) == True: return player
+                    if finishControl(player) == True: return ['finish', player]
                     
                 if len(dice_arr) == 0: break
                 
@@ -336,7 +424,7 @@ def main():
                 continue
                 
             c = findChequer(f[0], f[1], player)
-            if(f == 'save'): return 'save'
+            if(f == 'save'): return ['save', player, all_dices, dice_arr]
             elif(c == None):
                 print("{} chequer is not found for {} player!".format(f, player))
                 time.sleep(2)
@@ -344,7 +432,7 @@ def main():
         
             while True:
                 step = isInt(input("How many steps? {}: ".format(dice_arr)))
-                if step == 'save': return 'save'
+                if step == 'save': return ['save', player, all_dices, dice_arr]
                 elif step in dice_arr: break
                 else:
                     print("Invalid step! Only {}".format(dice_arr))
@@ -380,13 +468,12 @@ if __name__ == "__main__":
     all_lines = []
     lines_2D = []
     
-    createEntities()
     result = main()
     
-    if result in ['X','Y']:
-        input("\t\t\t {} PLAYER WON!".format(result))
-    elif result == 'save':
-        pass
+    if result[0] == 'finish':
+        input("\t\t\t {} PLAYER WON!".format(result[1]))
+    elif result[0] == 'save':
+        saveGame(result[1], result[2], result[3])
     
                 
         
