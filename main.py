@@ -263,7 +263,7 @@ def saveGame(player, allDices, currentDices):
 def main():
     player = ""
     roll_control = True
-    print("\t\t\tBACKGOMMON GAME \n")
+    print("\t\t\tBACKGAMMON GAME \n")
     
     while True:
         choose = isInt(input("1- New game \n2- Continue saved game \n--> "))
