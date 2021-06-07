@@ -1,5 +1,5 @@
-# Backgommon-Game
-Backgommon Console Game with Python
+# Backgammon-Game
+Backgammon Console Game with Python
 
 ```py
 python main.py
